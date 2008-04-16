@@ -83,4 +83,6 @@ end
 
 if defined?(Rails) and defined?(ActiveRecord) and defined?(ActionController)
   WillPaginate.enable
+elsif defined?(ActiveRecord)
+  WillPaginate.enable_activerecord
 end
