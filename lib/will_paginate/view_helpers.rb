@@ -132,11 +132,19 @@ module WillPaginate
     #   <%= page_entries_info @posts %>
     #   #-> Displaying entries 6 - 10 of 26 in total
     def page_entries_info(collection)
-      %{Displaying entries <b>%d&nbsp;-&nbsp;%d</b> of <b>%d</b> in total} % [
-        collection.offset + 1,
-        collection.offset + collection.length,
-        collection.total_entries
-      ]
+      if collection.total_pages < 2
+        case collection.size
+        when 0; 'No entries found'
+        when 1; 'Displaying <b>1</b> entry'
+        else;   "Displaying <b>all #{collection.size}</b> entries"
+        end
+      else
+        %{Displaying entries <b>%d&nbsp;-&nbsp;%d</b> of <b>%d</b> in total} % [
+          collection.offset + 1,
+          collection.offset + collection.length,
+          collection.total_entries
+        ]
+      end
     end
 
     def self.total_pages_for_collection(collection) #:nodoc:
@@ -272,7 +280,7 @@ module WillPaginate
         end
 
         url = @template.url_for(@url_params)
-        @url_string = url.sub(/([?&]#{CGI.escape param_name}=)#{page}/, '\1@')
+        @url_string = url.sub(%r!([?&/]#{CGI.escape param_name}[=/])#{page}!, '\1@')
         return url
       end
       @url_string.sub '@', page.to_s

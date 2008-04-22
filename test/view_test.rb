@@ -156,6 +156,19 @@ class ViewTest < Test::Unit::TestCase
     assert_equal %{Displaying entries <b>25&nbsp;-&nbsp;26</b> of <b>26</b> in total},
       @html_result
   end
+
+  def test_page_entries_info_with_single_page_collection
+    @template = '<%= page_entries_info collection %>'
+    
+    paginate(('a'..'d').to_a.paginate(:page => 1, :per_page => 5))
+    assert_equal %{Displaying <b>all 4</b> entries}, @html_result
+    
+    paginate(['a'].paginate(:page => 1, :per_page => 5))
+    assert_equal %{Displaying <b>1</b> entry}, @html_result
+    
+    paginate([].paginate(:page => 1, :per_page => 5))
+    assert_equal %{No entries found}, @html_result
+  end
   
   ## parameter handling in page links ##
   
@@ -203,6 +216,15 @@ class ViewTest < Test::Unit::TestCase
       assert_select 'a[href]', 4 do |links|
         assert_links_match /\?developers%5Bpage%5D=\d+$/, links
         validate_page_numbers [1,1,3,3], links, 'developers[page]'
+      end
+    end
+  end
+
+  def test_custom_routing_page_param
+    @request.symbolized_path_parameters.update :controller => 'dummy', :action => nil
+    paginate :per_page => 2 do
+      assert_select 'a[href]', 6 do |links|
+        assert_links_match %r{/page/(\d+)$}, links, [2, 3, 4, 5, 6, 2]
       end
     end
   end
@@ -294,14 +316,22 @@ class ViewTest < Test::Unit::TestCase
       })
     end
 
-    def assert_links_match pattern, links = nil
+    def assert_links_match pattern, links = nil, numbers = nil
       links ||= assert_select 'div.pagination a[href]' do |elements|
         elements
       end
+
+      pages = [] if numbers
       
       links.each do |el|
         assert_match pattern, el['href']
+        if numbers
+          el['href'] =~ pattern
+          pages << $1.to_i
+        end
       end
+
+      assert_equal pages, numbers, "page numbers don't match" if numbers
     end
 
     def assert_no_links_match pattern
