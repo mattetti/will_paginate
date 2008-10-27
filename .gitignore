@@ -1,5 +1,4 @@
 /doc
 /rails
-*.gem
 /coverage
 .DS_Store
